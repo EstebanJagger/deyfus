@@ -1,6 +1,5 @@
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/context/AuthContext';
 import { RecordsModal } from '@/components/RecordsModal';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -11,12 +10,12 @@ import { ShoppingBag, Plus, Eye, QrCode, Download, Copy, Edit, Power, Trash } fr
 import type { Product, Branch } from '@/lib/types';
 import Swal from 'sweetalert2';
 import { formatCurrency } from '@/lib/utils';
-import { useApi, API_BASE } from '@/lib/api';
+import { useApi, resolveImageUrl } from '@/lib/api';
+import ProductImage from './ProductImage';
 
 export default function ProductsPage() {
   const navigate = useNavigate();
   const api = useApi();
-  useAuth();
   
   const [showProductsModal, setShowProductsModal] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
@@ -148,8 +147,8 @@ export default function ProductsPage() {
   };
 
   return (
-    <div className="p-6">
-      <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 mb-6">
+    <div className="space-y-5">
+      <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <h1 className="text-2xl font-bold flex items-center gap-3 text-gray-800">
@@ -160,7 +159,7 @@ export default function ProductsPage() {
             </h1>
             <p className="text-gray-500 mt-1">Gestiona tu inventario de calzado</p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex w-full flex-wrap gap-2 sm:w-auto">
             <Button
               onClick={() => setShowProductsModal(true)}
               variant="outline"
@@ -178,7 +177,7 @@ export default function ProductsPage() {
         </div>
 
         {/* Filtros */}
-        <div className="mt-6 grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <div>
             <Input
               placeholder="Buscar productos..."
@@ -237,37 +236,30 @@ export default function ProductsPage() {
           <p className="text-gray-500">Intenta ajustar los filtros de búsqueda</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mt-6">
+        <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
           {filteredProducts.map((product) => (
             <Card key={product.id} className={`overflow-hidden hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200 ${!product.isActive ? 'opacity-75' : ''}`}>
-              <div className="aspect-square relative group">
+              <div className="group relative aspect-square">
                 {!product.isActive && (
                   <div className="absolute inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-10 text-white font-medium">
                     Inactivo
                   </div>
                 )}
-                <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-40 transition-opacity z-10"></div>
-                {product.imageUrl ? (
-                  <img 
-                    src={`${API_BASE}${product.imageUrl}`} 
-                    alt={product.name}
-                    className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-300"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.onerror = null; // Prevenir loop infinito
-                      target.parentElement!.innerHTML = `
-                        <div class="w-full h-full bg-gradient-to-br from-gray-50 to-gray-100 flex flex-col items-center justify-center">
-                          <ShoppingBag class="w-12 h-12 text-gray-300 mb-2" />
-                          <span class="text-sm text-gray-400">Imagen no disponible</span>
-                        </div>
-                      `;
-                    }}
-                  />
-                ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-gray-50 to-gray-100 flex flex-col items-center justify-center">
-                    <ShoppingBag className="w-12 h-12 text-gray-300 mb-2 transform group-hover:scale-110 transition-transform duration-300" />
-                    <span className="text-sm text-gray-400">Sin imagen</span>
-                  </div>
+                <ProductImage
+                  imageUrl={product.imageUrl}
+                  name={product.name}
+                  className="transition-transform duration-300 group-hover:scale-105"
+                />
+                <div className="pointer-events-none absolute inset-0 z-10 bg-black opacity-0 transition-opacity group-hover:opacity-10"></div>
+                {!product.imageUrl && (
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/dashboard/products/${product.id}/edit`)}
+                    className="absolute bottom-3 left-1/2 z-30 inline-flex -translate-x-1/2 items-center gap-1.5 whitespace-nowrap rounded-lg bg-white px-3 py-2 text-sm font-medium text-indigo-700 shadow-sm hover:bg-indigo-50"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Agregar imagen
+                  </button>
                 )}
                 <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-20">
                   <button
@@ -283,7 +275,7 @@ export default function ProductsPage() {
                           <div class="space-y-6 text-left">
                             <div class="relative w-full aspect-square rounded-lg overflow-hidden shadow-lg">
                               ${product.imageUrl 
-                                ? `<img src="${API_BASE}${product.imageUrl}" alt="${product.name}" class="w-full h-full object-cover">`
+                                ? `<img src="${resolveImageUrl(product.imageUrl)}" alt="${product.name}" class="w-full h-full object-cover">`
                                 : `<div class="w-full h-full bg-gray-100 flex items-center justify-center">
                                     <svg class="w-20 h-20 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
@@ -435,7 +427,7 @@ export default function ProductsPage() {
                             <div class="flex gap-4 items-start">
                               <div class="relative w-24 h-24 rounded-lg overflow-hidden shadow-sm flex-shrink-0">
                                 ${product.imageUrl 
-                                  ? `<img src="${API_BASE}${product.imageUrl}" alt="${product.name}" class="w-full h-full object-cover">`
+                                  ? `<img src="${resolveImageUrl(product.imageUrl)}" alt="${product.name}" class="w-full h-full object-cover">`
                                   : `<div class="w-full h-full bg-gray-100 flex items-center justify-center">
                                       <svg class="w-8 h-8 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
@@ -682,7 +674,7 @@ export default function ProductsPage() {
                   </button>
                   <button
                     onClick={() => {
-                      const url = product.imageUrl;
+                      const url = resolveImageUrl(product.imageUrl);
                       if (url) {
                         const a = document.createElement('a');
                         a.href = url;
@@ -748,28 +740,11 @@ export default function ProductsPage() {
               return (
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 rounded overflow-hidden">
-                    {product.imageUrl ? (
-                      <img 
-                        src={`${API_BASE}${product.imageUrl}`}
-                        alt={product.name}
-                        className="w-full h-full object-cover rounded-lg shadow-sm"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.onerror = null;
-                          target.parentElement!.innerHTML = `
-                            <div class="w-full h-full bg-gray-100 flex flex-col items-center justify-center rounded-lg">
-                              <ShoppingBag class="w-6 h-6 text-gray-300" />
-                              <span class="text-xs text-gray-400 mt-1">No disponible</span>
-                            </div>
-                          `;
-                        }}
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-gray-100 flex flex-col items-center justify-center rounded-lg">
-                        <ShoppingBag className="w-6 h-6 text-gray-300" />
-                        <span className="text-xs text-gray-400 mt-1">Sin imagen</span>
-                      </div>
-                    )}
+                    <ProductImage
+                      imageUrl={product.imageUrl}
+                      name={product.name}
+                      compact
+                    />
                   </div>
                   <div>
                     <div className="font-medium">{product.name}</div>
@@ -1006,4 +981,3 @@ export default function ProductsPage() {
     </div>
   );
 }
-

@@ -12,6 +12,15 @@ import type {
 const BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:4000';
 export const API_BASE = BASE;
 
+export function resolveImageUrl(imageUrl?: string | null) {
+  if (!imageUrl) return undefined;
+  try {
+    return new URL(imageUrl, `${BASE.replace(/\/+$/, '')}/`).toString();
+  } catch {
+    return imageUrl;
+  }
+}
+
 function buildUrl(path: string, params?: Record<string, any>) {
   // Asegurarnos de que todas las rutas empiecen con /api
   const normalizedPath = path.startsWith('/api') ? path : `/api${path}`;

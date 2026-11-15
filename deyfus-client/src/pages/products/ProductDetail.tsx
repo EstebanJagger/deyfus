@@ -3,7 +3,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
-import { useApi, API_BASE } from '@/lib/api';
+import { useApi, resolveImageUrl } from '@/lib/api';
+import ProductImage from './ProductImage';
 import { 
   ShoppingBag, 
   Package, 
@@ -236,17 +237,12 @@ const ProductDetail = () => {
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-3xl font-bold text-gray-800 flex items-center gap-3">
-            {product.imageUrl ? (
-              <img
-                src={product.imageUrl}
-                alt={product.name}
-                className="w-12 h-12 rounded-lg object-cover border-2 border-gray-200"
-              />
-            ) : (
-              <div className="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center">
-                <ShoppingBag className="w-6 h-6 text-gray-400" />
-              </div>
-            )}
+            <ProductImage
+              imageUrl={product.imageUrl}
+              name={product.name}
+              className="h-12 w-12 shrink-0 rounded-lg border-2 border-gray-200"
+              compact
+            />
             {product.name}
           </h1>
           <p className="text-gray-500 mt-1">SKU: {product.sku}</p>

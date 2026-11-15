@@ -15,7 +15,7 @@ import { GiRunningShoe } from 'react-icons/gi';
 import Swal from 'sweetalert2';
 import 'sweetalert2/dist/sweetalert2.min.css';
 
-export default function Sidebar() {
+export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const { user, logout } = useAuth();
   const role = (user?.role || '').toString().toUpperCase();
 
@@ -33,7 +33,7 @@ export default function Sidebar() {
   };
 
   return (
-  <aside className="w-72 min-h-screen bg-gradient-to-b from-white/60 via-white to-white/60 rounded-2xl p-6 pb-12 shadow-xl flex flex-col">
+  <aside className="flex min-h-0 w-full flex-col rounded-2xl border border-slate-200 bg-white p-6 pb-8 shadow-sm md:w-72">
       <div className="flex items-center gap-4 mb-6 pb-4 border-b border-gray-100">
         <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white shadow-lg">
           <GiRunningShoe size={26} />
@@ -55,7 +55,7 @@ export default function Sidebar() {
           { to: '/dashboard/inventory', label: 'Inventario', icon: <FaWarehouse /> },
           { to: '/dashboard/settings', label: 'Configuración', icon: <FaCog /> },
         ].map((item) => (
-          <NavLink to={item.to} key={item.to} className={() => `group block` }>
+          <NavLink to={item.to} key={item.to} onClick={onNavigate} className={() => `group block` }>
             {({ isActive }) => (
               <div className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${isActive ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md -translate-x-0.5' : 'text-slate-700 hover:bg-slate-100 hover:translate-x-0.5'}`}>
                 <span className={`w-10 h-10 rounded-lg flex items-center justify-center ${isActive ? 'bg-white/20' : 'bg-white'} `}>

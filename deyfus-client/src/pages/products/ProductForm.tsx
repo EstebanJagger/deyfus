@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useApi, API_BASE } from "@/lib/api";
+import { useApi, API_BASE, resolveImageUrl } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
@@ -74,9 +74,7 @@ export default function ProductForm() {
             initialStock: p.initialStock?.toString() ?? "",
           });
           if (p.imageUrl) {
-            const base = (API_BASE ?? 'http://localhost:4000').replace(/\/$/, '');
-            const path = p.imageUrl.startsWith('/') ? p.imageUrl : `/${p.imageUrl}`;
-            setImagePreview(`${base}${path}`);
+            setImagePreview(resolveImageUrl(p.imageUrl) ?? null);
           }
         }
       } catch (err) {
@@ -262,7 +260,19 @@ export default function ProductForm() {
               {imagePreview ? (
                 <div className="relative">
                   <img src={imagePreview} alt="preview" className="max-h-48 object-contain" />
-                  <button type="button" aria-label="Quitar imagen" title="Quitar imagen" className="absolute top-2 right-2" onClick={() => setImagePreview(null)}><X /></button>
+                  <button
+                    type="button"
+                    aria-label="Quitar imagen"
+                    title="Quitar imagen"
+                    className="absolute right-2 top-2 rounded-full bg-white p-1 shadow"
+                    onClick={() => {
+                      setImagePreview(null);
+                      setImageFile(null);
+                      setFormData(prev => ({ ...prev, imageUrl: '' }));
+                    }}
+                  >
+                    <X />
+                  </button>
                 </div>
               ) : (
                 <label className="cursor-pointer inline-flex flex-col items-center justify-center border-2 border-dashed rounded-md p-6">

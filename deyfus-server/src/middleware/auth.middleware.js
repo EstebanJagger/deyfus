@@ -11,6 +11,14 @@ export const authMiddleware = async (req, res, next) => {
     const user = await prisma.user.findUnique({ where: { id: payload.id } });
     if (!user) return res.status(401).json({ message: 'Usuario no encontrado' });
     req.user = { id: user.id, role: user.role, branchId: user.branchId };
+    res.setHeader(
+      'X-Auth-Token',
+      jwt.sign(
+        { id: user.id, role: user.role, branchId: user.branchId },
+        JWT_SECRET,
+        { expiresIn: '8h' }
+      )
+    );
     next();
   } catch (err) {
     return res.status(401).json({ message: 'Token inválido' });

@@ -220,7 +220,7 @@ export default function SalesTable() {
                           await api.put(`/sales/${sale.id}`, { status: 'COMPLETED' });
                           Swal.fire({ icon: 'success', title: 'Venta completada', timer: 1400, showConfirmButton: false });
                           loadSales();
-                        } catch (err) {
+                        } catch (err: any) {
                           console.error('Error marcando venta como completada', err);
                           Swal.fire({ icon: 'error', title: 'Error', text: err?.message || 'Error al actualizar' });
                         }
@@ -257,7 +257,7 @@ export default function SalesTable() {
                 await api.put(`/sales/${editing.id}`, { paymentMethod, status });
                 setEditOpen(false);
                 loadSales();
-              } catch (err) {
+              } catch (err: any) {
                 console.error('Error actualizando venta', err);
                 alert(err?.message || 'Error al actualizar');
               }

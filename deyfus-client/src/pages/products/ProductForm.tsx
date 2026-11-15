@@ -7,7 +7,7 @@ import { Select } from "@/components/ui/select";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import Swal from "sweetalert2";
-import { QRCode } from "react-qr-code";
+import QRCode from "react-qr-code";
 import { ArrowLeft, Save, X, Loader2, ShoppingBag, Upload } from "lucide-react";
 
 interface Category { id: string; name: string }

@@ -49,7 +49,9 @@ export interface Product {
   createdAt: string;
   updatedAt: string;
   inventory?: Inventory[];
-  stock?: number; // Stock total disponible
+  stock?: number;
+  isMainProduct?: boolean;
+  lastSale?: string | Date; // Stock total disponible
 }
 
 export interface Category {
@@ -143,4 +145,24 @@ export interface FinancialTransaction {
   sale?: Sale;
   createdAt: string;
   updatedAt: string;
+}
+
+export type InventoryItem = Inventory;
+export type Movement = InventoryMovement;
+
+export interface StockAlert {
+  id: number;
+  type: 'OUT_OF_STOCK' | 'LOW_STOCK' | string;
+  inventoryItemId?: number;
+  inventoryItem: Inventory;
+  productId?: number;
+  product?: Product;
+  branchId?: number;
+  branch?: Branch;
+  currentStock?: number;
+  minStock?: number;
+  status?: 'PENDING' | 'RESOLVED' | string;
+  isResolved?: boolean;
+  createdAt: string;
+  updatedAt?: string;
 }

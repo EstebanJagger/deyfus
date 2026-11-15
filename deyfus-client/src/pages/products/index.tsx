@@ -958,7 +958,7 @@ export default function ProductsPage() {
                         const blob = await new Promise(resolve => canvas.toBlob(resolve));
                         if (blob) {
                           await navigator.clipboard.write([
-                            new ClipboardItem({ 'image/png': blob })
+                            new ClipboardItem({ 'image/png': blob as Blob})
                           ]);
                           
                           // Mostrar toast de éxito

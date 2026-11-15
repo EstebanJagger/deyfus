@@ -1,7 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Tooltip } from "@/components/ui/tooltip";
 import type { StockAlert } from "@/lib/types";
 
 interface AlertsViewProps {
@@ -22,16 +21,20 @@ export function AlertsView({ alerts, onResolve }: AlertsViewProps) {
             className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
           >
             <div className="flex items-center gap-3">
-              <Badge 
+              <Badge
                 variant={
-                  alert.type === 'OUT_OF_STOCK' ? 'destructive' :
-                  alert.type === 'LOW_STOCK' ? 'secondary' :
-                  'outline'
+                  alert.type === "OUT_OF_STOCK"
+                    ? "destructive"
+                    : alert.type === "LOW_STOCK"
+                    ? "secondary"
+                    : "outline"
                 }
               >
-                {alert.type === 'OUT_OF_STOCK' ? 'Sin stock' :
-                 alert.type === 'LOW_STOCK' ? 'Stock bajo' :
-                 'Stock excedido'}
+                {alert.type === "OUT_OF_STOCK"
+                  ? "Sin stock"
+                  : alert.type === "LOW_STOCK"
+                  ? "Stock bajo"
+                  : "Stock excedido"}
               </Badge>
               <div>
                 <p className="font-medium">
@@ -42,15 +45,14 @@ export function AlertsView({ alerts, onResolve }: AlertsViewProps) {
                 </p>
               </div>
             </div>
-            <Tooltip text="Marcar como resuelto">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => onResolve(alert.id)}
-              >
-                Resolver
-              </Button>
-            </Tooltip>
+            <Button
+              variant="ghost"
+              size="sm"
+              title="Marcar como resuelto"
+              onClick={() => onResolve(alert.id)}
+            >
+              Resolver
+            </Button>
           </div>
         ))}
       </div>

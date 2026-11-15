@@ -33,8 +33,8 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   };
 
   return (
-  <aside className="flex min-h-0 w-full flex-col rounded-2xl border border-slate-200 bg-white p-6 pb-8 shadow-sm md:w-72">
-      <div className="flex items-center gap-4 mb-6 pb-4 border-b border-gray-100">
+  <aside className="flex h-full min-h-0 w-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 pb-8 shadow-sm md:w-72">
+      <div className="mb-6 flex shrink-0 items-center gap-4 border-b border-gray-100 pb-4">
         <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white shadow-lg">
           <GiRunningShoe size={26} />
         </div>
@@ -44,7 +44,7 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         </div>
       </div>
 
-      <nav className="flex-1 space-y-2 py-2">
+      <nav className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain py-2">
         {[
           { to: '/dashboard', label: 'Dashboard', icon: <FaChartLine /> },
           { to: '/dashboard/users', label: 'Usuarios', icon: <FaUsers /> },
@@ -55,7 +55,13 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
           { to: '/dashboard/inventory', label: 'Inventario', icon: <FaWarehouse /> },
           { to: '/dashboard/settings', label: 'Configuración', icon: <FaCog /> },
         ].map((item) => (
-          <NavLink to={item.to} key={item.to} onClick={onNavigate} className={() => `group block` }>
+          <NavLink
+            to={item.to}
+            key={item.to}
+            end={item.to === '/dashboard'}
+            onClick={onNavigate}
+            className="group block"
+          >
             {({ isActive }) => (
               <div className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${isActive ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md -translate-x-0.5' : 'text-slate-700 hover:bg-slate-100 hover:translate-x-0.5'}`}>
                 <span className={`w-10 h-10 rounded-lg flex items-center justify-center ${isActive ? 'bg-white/20' : 'bg-white'} `}>
@@ -69,7 +75,7 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         ))}
       </nav>
 
-  <div className="mt-auto pt-6 border-t border-gray-100">
+  <div className="mt-auto shrink-0 border-t border-gray-100 pt-6">
         <div className="flex items-center gap-3 mb-3">
           <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white shadow-md">
             {user?.name ? String(user.name).split(' ').map((x: string) => x[0]).slice(0,2).join('') : 'U'}

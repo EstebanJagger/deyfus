@@ -38,7 +38,7 @@ export default function DashboardLayout() {
     <div className="h-[100dvh] overflow-hidden bg-slate-50">
       <div className="flex h-full min-w-0">
         {/* Sidebar */}
-        <aside className="hidden shrink-0 p-4 md:flex md:w-72">
+        <aside className="hidden h-full min-h-0 shrink-0 p-4 md:flex md:w-72">
           <Sidebar />
         </aside>
 

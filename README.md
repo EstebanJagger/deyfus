@@ -1,255 +1,151 @@
-#  Deyfus — Sistema de Gestión de Inventario y Ventas
+# Deyfus
+Sistema de gestión de inventario, ventas y finanzas con panel de análisis de datos.
+- **Repositorio original**: [https://github.com/EstebanJagger/deyfus](https://github.com/EstebanJagger/deyfus)
+- **Licencia**: MIT
 
-Una aplicación full-stack para gestionar sucursales, inventario, productos, ventas y finanzas. Incluye autenticación JWT, panel de control, reportes y gestión de stock.
+## Despliegue
+- **App (Frontend en Vercel)**: [La pagina](https://deyfus.vercel.app/)
+- **Dashboard (Looker Studio o Data Studio)**: [Ver reporte interactivo](https://datastudio.google.com/reporting/ffc04765-1c00-4f4a-9450-749a63f7f685)
+*(Nota: La API backend se encuentra desplegada de forma privada en Render y es consumida exclusivamente por el frontend y se debe elegir sucursal para que salgan los datos :> ).*
 
-##  Requisitos Previos
+## Ejecución local
 
-- **Node.js** v18+ ([Descargar](https://nodejs.org/))
-- **PostgreSQL** 13+ ([Descargar](https://www.postgresql.org/)) o usar otra BD compatible con Prisma
-- **Git** ([Descargar](https://git-scm.com/))
-- **npm** (incluido en Node.js)
+1. **Requisitos**: Node 18+, Git, PostgreSQL.
+2. **Clonar repositorio**:
+   ```bash
+   git clone https://github.com/EstebanJagger/deyfus.git
+   cd deyfus
+   ```
+3. **Backend**:
+   - Copia `.env.example` a `.env` y completa las variables.
+   - Instala dependencias y levanta la base de datos:
+     ```bash
+     npm install
+     npx prisma generate
+     npx prisma db push
+     npm run dev
+     ```
+4. **Frontend**:
+   - Crea un archivo `.env` configurando `VITE_API_URL` y `VITE_LOOKER_EMBED_URL`.
+   - Ejecuta:
+     ```bash
+     npm install
+     npm run dev
+     ```
 
-##  Instalación Rápida
+## Variables de entorno
 
-### 1. Clonar el repositorio
+| Variable | Descripción |
+|----------|-------------|
+| `DATABASE_URL` | Cadena de conexión a la base de datos PostgreSQL local o remota. |
+| `JWT_SECRET` | Clave secreta para la firma y validación de tokens de autenticación. |
+| `PORT` | Puerto de ejecución del servidor backend (por defecto 3000 o 3001). |
+| `VITE_API_URL` | URL base para las peticiones del frontend hacia el backend (ej. `http://localhost:3000`). |
+| `VITE_LOOKER_EMBED_URL` | URL del iframe para incrustar el dashboard de Looker Studio. |
 
-```bash
-git clone https://github.com/Elizabeth207/deyfus.git
-cd deyfus
+## Modelo de datos
+
+El sistema utiliza un modelo relacional centrado en Sucursales (`Branch`), administrando Usuarios (`User`), Inventario (`Inventory`), Ventas (`Sale`) y Finanzas (`FinancialTransaction`).
+
+```mermaid
+erDiagram
+    Branch ||--o{ User : "tiene"
+    Branch ||--o{ Product : "asigna"
+    Branch ||--o{ Inventory : "almacena"
+    Branch ||--o{ Sale : "registra"
+    Category ||--o{ Product : "clasifica"
+    Product ||--o{ Inventory : "posee"
+    Product ||--o{ SaleItem : "incluye"
+    User ||--o{ Sale : "realiza"
+    Sale ||--o{ SaleItem : "contiene"
+    Sale ||--o{ FinancialTransaction : "genera"
+    User ||--o{ InventoryMovement : "ejecuta"
+    Product ||--o{ InventoryMovement : "registra"
+    Product ||--o{ StockAlert : "notifica"
 ```
+![Esta es en imagen, para que se vea un poquito mejor](Untitled.png)
 
-### 2. Configurar el servidor (Backend)
+- **Branch**: Sucursales físicas o puntos de venta.
+- **User**: Empleados con niveles de acceso (`ADMIN`, `MANAGER`, `SELLER`).
+- **Product & Category**: Catálogo base de artículos, incluyendo códigos de barras y QR.
+- **Inventory & InventoryMovement**: Control de stock por sucursal y registro de auditoría de entradas, salidas y ajustes.
+- **Sale & SaleItem**: Transacciones comerciales, métodos de pago y detalle de productos vendidos.
+- **FinancialTransaction**: Registro de ingresos y egresos vinculados a las ventas.
+- **StockAlert**: Alertas automáticas para niveles de inventario mínimos (`LOW_STOCK`) o excesivos (`OVERSTOCK`).
 
-```bash
-cd deyfus-server
+## Scripts SQL y Datos de Prueba
 
-# Instalar dependencias
-npm install
+El esquema estructural de la base de datos se encuentra en `database/schema.sql`. 
+Si deseas poblar la base de datos con información inicial para pruebas (Sucursales, Usuarios, Productos, Ventas), puedes ejecutar el siguiente script `seed.sql`:
 
-# Crear archivo .env con credenciales de tu base de datos
-# Edita .env y reemplaza DATABASE_URL con tus credenciales:
+<details>
+<summary><b>Haz clic aquí para ver el código de database/seed.sql</b></summary>
+
+```sql
+-- Insertar Sucursales (Branches)
+INSERT INTO "Branch" (name, address, phone, "updatedAt") 
+VALUES 
+('Sede Principal', 'Calle Falsa 123', '555-0101', CURRENT_TIMESTAMP),
+('Sucursal Norte', 'Av. Siempreviva 742', '555-0202', CURRENT_TIMESTAMP);
+
+-- Insertar Usuarios (Contraseña: hash_del_password)
+INSERT INTO "User" (name, email, password, role, "branchId", "updatedAt") 
+VALUES 
+('Admin General', 'admin@deyfus.com', 'hash_123', 'ADMIN', 1, CURRENT_TIMESTAMP),
+('Vendedor Juan', 'juan@deyfus.com', 'hash_123', 'SELLER', 1, CURRENT_TIMESTAMP),
+('Gerente Norte', 'gerente@deyfus.com', 'hash_123', 'MANAGER', 2, CURRENT_TIMESTAMP);
+
+-- Insertar Categorías
+INSERT INTO "Category" (name, description, "updatedAt") 
+VALUES 
+('Electrónica', 'Dispositivos y gadgets', CURRENT_TIMESTAMP),
+('Accesorios', 'Cables, fundas y complementos', CURRENT_TIMESTAMP);
+
+-- Insertar Productos
+INSERT INTO "Product" (name, description, sku, barcode, price, cost, "qrCode", "categoryId", "branchId", "updatedAt") 
+VALUES 
+('Laptop Pro', 'Portátil de alto rendimiento', 'LAP-001', '7701234567890', 1200.00, 900.00, 'QR-LAP-001', 1, 1, CURRENT_TIMESTAMP),
+('Mouse Inalámbrico', 'Mouse ergonómico 2.4GHz', 'MOU-001', '7701234567891', 25.00, 10.00, 'QR-MOU-001', 2, 1, CURRENT_TIMESTAMP);
+
+-- Insertar Inventario
+INSERT INTO "Inventory" ("productId", "branchId", quantity, "minStock", "updatedAt") 
+VALUES 
+(1, 1, 15, 5, CURRENT_TIMESTAMP),
+(2, 1, 50, 10, CURRENT_TIMESTAMP),
+(1, 2, 5, 5, CURRENT_TIMESTAMP);
+
+-- Registrar Movimientos de Inventario
+INSERT INTO "InventoryMovement" ("productId", "branchId", "userId", type, quantity, "previousStock", "newStock", reason) 
+VALUES 
+(1, 1, 1, 'ENTRY', 15, 0, 15, 'Inventario inicial'),
+(2, 1, 1, 'ENTRY', 50, 0, 50, 'Inventario inicial');
+
+-- Insertar una Venta (Sale)
+INSERT INTO "Sale" ("userId", "branchId", total, subtotal, tax, discount, "paymentMethod", "paymentStatus", status) 
+VALUES 
+(2, 1, 1225.00, 1225.00, 0.00, 0.00, 'CARD', 'COMPLETED', 'COMPLETED');
+
+-- Insertar Detalles de la Venta (SaleItem)
+INSERT INTO "SaleItem" ("saleId", "productId", quantity, price, cost) 
+VALUES 
+(1, 1, 1, 1200.00, 900.00),
+(1, 2, 1, 25.00, 10.00);
+
+-- Insertar Transacción Financiera
+INSERT INTO "FinancialTransaction" (type, amount, description, "branchId", "userId", category, "saleId", "updatedAt") 
+VALUES 
+('INCOME', 1225.00, 'Venta en mostrador', 1, 2, 'VENTAS', 1, CURRENT_TIMESTAMP);
+
+-- Insertar Alerta de Stock
+INSERT INTO "StockAlert" ("productId", "branchId", "userId", type, message, status)
+VALUES
+(1, 2, 3, 'LOW_STOCK', 'El stock de Laptop Pro ha llegado a su nivel mínimo en la Sucursal Norte.', 'PENDING');
 ```
+</details>
 
-**Archivo `.deyfus-server/.env`:**
-```properties
-DATABASE_URL="postgresql://usuario:contraseña@localhost:5432/deyfus_db"
-JWT_SECRET="tu_clave_secreta_aqui"
-SMTP_HOST=smtp.gmail.com
-SMTP_USER=tu@email.com
-SMTP_PASS=tu_contraseña
-PORT=4001
-FRONTEND_URL=http://localhost:5173
-HOST=0.0.0.0
-```
-
-**Nota:** Reemplaza `usuario`, `contraseña`, y `localhost:5432` con tus credenciales reales de PostgreSQL.
-
-### 3. Crear base de datos e importar datos
-
-```bash
-# Crear tablas en la BD
-npx prisma db push
-
-# Importar todos tus datos guardados (370+ registros: sucursales, productos, ventas, etc.)
-node scripts/import_data.cjs
-
-# Verificar que todo se importó correctamente (opcional)
-# npx prisma studio    # Abre interfaz web para revisar datos
-```
-
-### 4. Iniciar el servidor
-
-```bash
-npm run dev
-```
-
-Deberías ver: `Server running: http://localhost:4001`
-
-### 5. Configurar el cliente (Frontend)
-
-En otra terminal:
-
-```bash
-cd deyfus-client
-
-# Instalar dependencias
-npm install
-
-# Crear archivo .env (opcional, por defecto apunta a http://localhost:4001)
-echo "VITE_API_URL=http://localhost:4001" > .env
-
-# Iniciar aplicación
-npm run dev
-```
-
-La aplicación se abrirá en `http://localhost:5173`
-
-##  Credenciales de Prueba
-
-Después de importar datos, puedes usar las credenciales que registraste:
-
-- **Email:** (one de los usuarios en `data_export.json`)
-- **Password:** (la que registraste)
-
-O crea un nuevo usuario usando el formulario de registro.
-
-## Modo de demostración visual
-
-En el panel, presiona `Ctrl+X` y luego `C` (dentro de 1.5 segundos) y escribe `hesoyam` para abrir una vista de usuarios ficticios. Esta vista es solo para demostración: no cambia roles ni consulta o modifica datos de usuarios en el servidor.
-
-## Estructura del Proyecto
-
-```
-deyfus/
-├── deyfus-server/          # Backend (Node.js + Express + Prisma)
-│   ├── src/
-│   │   ├── controllers/    # Lógica de negocio
-│   │   ├── routes/         # Endpoints de API
-│   │   ├── middleware/     # Autenticación, validación, error handling
-│   │   └── utils/          # Utilidades (upload, validación, etc.)
-│   ├── prisma/             # Esquema BD, migraciones
-│   ├── scripts/
-│   │   ├── export_data.cjs # Exportar datos a JSON
-│   │   └── import_data.cjs # Importar datos desde JSON ⭐
-│   ├── uploads/            # Imágenes y archivos subidos
-│   └── data_export.json    # Snapshots de tus datos guardados
-│
-├── deyfus-client/          # Frontend (React + TypeScript + Tailwind)
-│   ├── src/
-│   │   ├── components/     # Componentes reutilizables
-│   │   ├── pages/          # Páginas (login, dashboard, productos, etc.)
-│   │   ├── context/        # Context API (autenticación)
-│   │   ├── lib/            # Utilidades (API client, tipos)
-│   │   └── routes/         # Rutas y protección
-│   └── public/             # Archivos estáticos
-│
-└── .gitignore             # Excluye node_modules, .env, etc. (pero incluye data_export.json y uploads/)
-```
-
-##  Características Principales
-
-### Autenticación
-- Login / Registro con JWT
-- Recuperación de contraseña
-- Rol de usuario (ADMIN, MANAGER, SELLER)
-
-###  Dashboard
-- Resumen de ventas, inventario y finanzas
-- Gráficos y análisis
-
-###  Gestión de Productos
-- CRUD de productos
-- Código de barras y QR
-- Gestión de categorías
-- Subida de imágenes
-
-###  Inventario
-- Seguimiento de stock por sucursal
-- Movimientos de inventario
-- Alertas de bajo stock / overstock
-- Ajustes manuales
-
-###  Ventas
-- Punto de venta (POS)
-- Historial de ventas
-- Métodos de pago (efectivo, tarjeta, transferencia)
-
-###  Finanzas
-- Registro de ingresos/gastos
-- Reportes financieros por sucursal
-- Seguimiento de transacciones
-
-###  Sucursales
-- Gestión multi-sucursal
-- Estadísticas por sucursal
-- Control de inventario distribuido
-
-##  Scripts Disponibles
-
-### Backend (`deyfus-server/`)
-
-```bash
-npm run dev              # Iniciar con nodemon (desarrollo)
-npm run build            # Compilar (si aplica)
-npm test                 # Ejecutar tests
-node scripts/export_data.cjs   # Exportar datos a JSON
-node scripts/import_data.cjs   # Importar datos desde JSON
-npx prisma studio       # Abrir editor visual de BD
-npx prisma migrate dev  # Crear y ejecutar migraciones
-```
-
-### Frontend (`deyfus-client/`)
-
-```bash
-npm run dev              # Servidor de desarrollo (Vite)
-npm run build            # Compilar para producción
-npm run preview          # Preview de la build
-npm run lint             # ESLint
-```
-
-##  Restaurar Datos en Otra Máquina
-
-Si clonaste el repo en otra PC:
-
-```bash
-cd deyfus-server
-
-# Crear el archivo .env con tus credenciales locales
-# (mismas instrucciones que arriba)
-
-# Crear tablas
-npx prisma db push
-
-# Importar tus datos guardados
-node scripts/import_data.cjs
-
-#  Listo — todos tus datos estarán disponibles
-```
-
-##  Imágenes y Uploads
-
-Las imágenes que subiste están en `deyfus-server/uploads/` y se incluyen en el repositorio. Se sirven automáticamente cuando accedes a los productos.
-
-Si necesitas agregar más imágenes después de la importación, usa la interfaz de carga en la app.
-
-##  Seguridad
-
- **Recomendaciones:**
-
-- `.env` contiene credenciales sensibles — **NO subir a GitHub** (ya está en `.gitignore`)
-- JWT_SECRET — usa una clave fuerte y única
-- Para producción, usa variables de entorno seguras (env. vault, servicios administrados)
-- Considera usar HttpOnly cookies en lugar de localStorage para tokens (mejora seguridad)
-
-##  Troubleshooting
-
-### Error: `P1000: Authentication failed`
-- Verifica que PostgreSQL está corriendo
-- Revisa las credenciales en `.env` (usuario, contraseña, host, puerto)
-
-### Error: `Port 4001 already in use`
-- Cambia `PORT` en `.env` o mata el proceso que usa ese puerto:
-  ```bash
-  # Windows PowerShell
-  netstat -ano | findstr :4001
-  taskkill /PID <PID> /F
-  ```
-
-### Error: `Cannot find module '@prisma/client'`
-- Ejecuta `npx prisma generate` en `deyfus-server/`
-
-### Datos no aparecen después de importar
-- Verifica que `npx prisma db push` completó sin errores
-- Revisa que `data_export.json` existe en `deyfus-server/`
-- Ejecuta `node scripts/import_data.cjs` de nuevo
-
-##  Contacto & Soporte
-
-Para issues o preguntas, abre un [issue en GitHub](https://github.com/Elizabeth207/deyfus/issues).
-
-##  Licencia
-
-MIT — libre para usar, modificar y distribuir.
-
----
-
+## Dashboard
+El panel interactivo en Looker Studio permite visualizar:
+- **Ventas y Rentabilidad**: Gráficos de ingresos frente a costos a lo largo del tiempo.
+- **Rendimiento por Sucursal**: Comparativas de ventas según la ubicación física.
+- **Estado de Inventario**: Identificación rápida de productos con stock crítico.
+- **Filtros**: Segmentación de datos por rango de fechas, categoría de producto y sucursal.

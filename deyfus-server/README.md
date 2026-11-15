@@ -68,7 +68,8 @@ Todos los endpoints protegidos requieren el header `Authorization: Bearer <token
 - Si el puerto 4000 está ocupado, cambia `PORT` en `.env` o mata el proceso que lo usa.
 - Después de cambiar `prisma/schema.prisma`, ejecuta `npx prisma migrate dev --name <descripcion>` para crear y aplicar migraciones.
 - Las búsquedas automáticas de fotos usan Wikimedia Commons y no requieren una API key.
-- Aplica la migración existente en la base de datos de producción con `npx prisma migrate deploy` desde `deyfus-server` antes de usar la búsqueda de imágenes.
+- Antes de arrancar, el servidor comprueba y agrega de forma segura las columnas faltantes para los metadatos de imágenes; no requiere pasos manuales en Render.
+- Para reparar una base ya iniciada manualmente, ejecuta `npm run db:prepare-image-metadata` desde `deyfus-server`. El comando solo agrega las cinco columnas de metadatos si faltan y permite reintentar búsquedas de productos sin imagen.
 - En **Productos**, pulsa **Buscar imágenes** para buscar fotos de productos existentes sin imagen. Se procesan hasta 10 por intento; repite si quedan productos. Los productos nuevos buscan una imagen al guardarse.
 - Las coincidencias de Wikimedia Commons son ilustrativas y pueden no corresponder al modelo exacto. La aplicación muestra el autor, la licencia y los enlaces a la ficha de la foto y a la licencia.
 

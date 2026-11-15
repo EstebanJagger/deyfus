@@ -1,6 +1,6 @@
 ALTER TABLE "Product"
-ADD COLUMN "imageLicense" TEXT,
-ADD COLUMN "imageLicenseUrl" TEXT;
+ADD COLUMN IF NOT EXISTS "imageLicense" TEXT,
+ADD COLUMN IF NOT EXISTS "imageLicenseUrl" TEXT;
 
 UPDATE "Product"
 SET "imageSearchAttemptedAt" = NULL

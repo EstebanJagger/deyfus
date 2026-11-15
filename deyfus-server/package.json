@@ -5,7 +5,9 @@
   "main": "src/index.js",
   "scripts": {
     "dev": "nodemon src/index.js",
+    "prestart": "node scripts/ensure-product-image-columns.js",
     "start": "node src/index.js",
+    "db:prepare-image-metadata": "node scripts/ensure-product-image-columns.js",
     "seed": "node prisma/seed.js",
     "prisma:generate": "npx prisma generate"
   },

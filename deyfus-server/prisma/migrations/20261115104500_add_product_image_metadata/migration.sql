@@ -1,4 +1,4 @@
 ALTER TABLE "Product"
-ADD COLUMN "imageCredit" TEXT,
-ADD COLUMN "imageSourceUrl" TEXT,
-ADD COLUMN "imageSearchAttemptedAt" TIMESTAMP(3);
+ADD COLUMN IF NOT EXISTS "imageCredit" TEXT,
+ADD COLUMN IF NOT EXISTS "imageSourceUrl" TEXT,
+ADD COLUMN IF NOT EXISTS "imageSearchAttemptedAt" TIMESTAMP(3);

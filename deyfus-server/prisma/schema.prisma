@@ -114,6 +114,8 @@ model Product {
   imageUrl               String?
   imageCredit            String?
   imageSourceUrl         String?
+  imageLicense           String?
+  imageLicenseUrl        String?
   imageSearchAttemptedAt DateTime?
   qrCode                 String    @unique
   categoryId             Int?

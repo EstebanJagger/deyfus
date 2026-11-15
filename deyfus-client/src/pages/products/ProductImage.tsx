@@ -7,6 +7,8 @@ type ProductImageProps = {
   name: string;
   imageCredit?: string | null;
   imageSourceUrl?: string | null;
+  imageLicense?: string | null;
+  imageLicenseUrl?: string | null;
   className?: string;
   compact?: boolean;
 };
@@ -16,6 +18,8 @@ export default function ProductImage({
   name,
   imageCredit,
   imageSourceUrl,
+  imageLicense,
+  imageLicenseUrl,
   className = 'h-full w-full',
   compact = false,
 }: ProductImageProps) {
@@ -35,19 +39,25 @@ export default function ProductImage({
           className={`h-full w-full object-cover ${className}`}
           onError={() => setFailed(true)}
         />
-        {imageCredit && imageSourceUrl && (
-          <a
-            href={imageSourceUrl}
-            target="_blank"
-            rel="noreferrer"
-            onClick={(event) => event.stopPropagation()}
+        {imageCredit && imageSourceUrl && imageLicense && imageLicenseUrl && (
+          <div
             className={`absolute inset-x-0 bottom-0 truncate bg-black/55 px-1.5 py-1 text-center text-white ${
               compact ? 'text-[8px]' : 'text-[10px]'
             }`}
-            title={`Foto de ${imageCredit} en Pexels`}
+            title={`Foto: ${imageCredit}. Licencia: ${imageLicense}. Wikimedia Commons.`}
           >
-            Foto: {imageCredit} / Pexels
-          </a>
+            <a href={imageSourceUrl} target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()}>
+              Foto: {imageCredit}
+            </a>
+            {' · '}
+            <a href={imageLicenseUrl} target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()}>
+              {imageLicense}
+            </a>
+            {' · '}
+            <a href="https://commons.wikimedia.org/" target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()}>
+              Wikimedia Commons
+            </a>
+          </div>
         )}
       </div>
     );

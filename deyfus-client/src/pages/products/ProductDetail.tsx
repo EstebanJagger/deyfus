@@ -46,6 +46,8 @@ interface Product {
   imageUrl?: string;
   imageCredit?: string;
   imageSourceUrl?: string;
+  imageLicense?: string;
+  imageLicenseUrl?: string;
   qrCode: string;
   isActive: boolean;
   category?: {
@@ -244,6 +246,8 @@ const ProductDetail = () => {
               name={product.name}
               imageCredit={product.imageCredit}
               imageSourceUrl={product.imageSourceUrl}
+              imageLicense={product.imageLicense}
+              imageLicenseUrl={product.imageLicenseUrl}
               className="h-12 w-12 shrink-0 rounded-lg border-2 border-gray-200"
               compact
             />

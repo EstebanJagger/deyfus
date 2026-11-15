@@ -42,6 +42,8 @@ export interface Product {
   imageUrl?: string;
   imageCredit?: string;
   imageSourceUrl?: string;
+  imageLicense?: string;
+  imageLicenseUrl?: string;
   qrCode: string;
   categoryId?: number;
   category?: Category;

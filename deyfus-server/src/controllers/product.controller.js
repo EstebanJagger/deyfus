@@ -1,5 +1,5 @@
 import prisma from '../prisma.js';
-import { findProductImage } from '../utils/pexels.js';
+import { findProductImage } from '../utils/wikimedia.js';
 
 const attachProductImage = async (product) => {
   const image = await findProductImage(product);
@@ -8,7 +8,7 @@ const attachProductImage = async (product) => {
       where: { id: product.id },
       data: { imageSearchAttemptedAt: new Date() }
     });
-    return { product: { ...product, imageSearchAttemptedAt: new Date() }, warning: 'Pexels no encontró una imagen para este producto.' };
+    return { product: { ...product, imageSearchAttemptedAt: new Date() }, warning: 'Wikimedia Commons no encontró una imagen para este producto.' };
   }
 
   const updated = await prisma.product.update({
@@ -93,13 +93,7 @@ export const getProducts = async (req, res) => {
 
 export const autoAssignProductImages = async (req, res) => {
   try {
-    if (!process.env.PEXELS_API_KEY) {
-      return res.status(503).json({
-        message: 'Configura PEXELS_API_KEY en las variables de entorno del servidor para buscar imágenes.'
-      });
-    }
-
-    const batchSize = 20;
+    const batchSize = 10;
     const products = await prisma.product.findMany({
       where: { imageUrl: null, imageSearchAttemptedAt: null },
       select: { id: true, name: true, brand: true },

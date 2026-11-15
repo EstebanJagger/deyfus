@@ -13,6 +13,24 @@ import { formatCurrency } from '@/lib/utils';
 import { useApi, resolveImageUrl } from '@/lib/api';
 import ProductImage from './ProductImage';
 
+const escapeHtml = (value: string) => value.replace(/[&<>"']/g, (char) => ({
+  '&': '&amp;',
+  '<': '&lt;',
+  '>': '&gt;',
+  '"': '&quot;',
+  "'": '&#39;'
+})[char] ?? char);
+
+const safeExternalUrl = (value?: string) => {
+  if (!value) return '';
+  try {
+    const url = new URL(value);
+    return url.protocol === 'https:' ? escapeHtml(url.toString()) : '';
+  } catch {
+    return '';
+  }
+};
+
 export default function ProductsPage() {
   const navigate = useNavigate();
   const api = useApi();
@@ -291,6 +309,8 @@ export default function ProductsPage() {
                   name={product.name}
                   imageCredit={product.imageCredit}
                   imageSourceUrl={product.imageSourceUrl}
+                  imageLicense={product.imageLicense}
+                  imageLicenseUrl={product.imageLicenseUrl}
                   className="transition-transform duration-300 group-hover:scale-105"
                 />
                 <div className="pointer-events-none absolute inset-0 z-10 bg-black opacity-0 transition-opacity group-hover:opacity-10"></div>
@@ -315,8 +335,8 @@ export default function ProductsPage() {
                                     </svg>
                                    </div>`
                               }
-                              ${product.imageCredit && product.imageSourceUrl
-                                ? `<a href="${product.imageSourceUrl}" target="_blank" rel="noreferrer" class="absolute bottom-0 left-0 right-0 bg-black/55 px-2 py-1 text-center text-xs text-white">Foto: ${product.imageCredit} / Pexels</a>`
+                              ${product.imageCredit && product.imageSourceUrl && product.imageLicense && product.imageLicenseUrl
+                                ? `<div class="absolute bottom-0 left-0 right-0 bg-black/55 px-2 py-1 text-center text-xs text-white"><a href="${safeExternalUrl(product.imageSourceUrl)}" target="_blank" rel="noreferrer">Foto: ${escapeHtml(product.imageCredit)}</a> · <a href="${safeExternalUrl(product.imageLicenseUrl)}" target="_blank" rel="noreferrer">${escapeHtml(product.imageLicense)}</a> · <a href="https://commons.wikimedia.org/" target="_blank" rel="noreferrer">Wikimedia Commons</a></div>`
                                 : ''}
                               ${product.isActive 
                                 ? `<div class="absolute top-2 right-2">
@@ -470,8 +490,8 @@ export default function ProductsPage() {
                                       </svg>
                                      </div>`
                                 }
-                                ${product.imageCredit && product.imageSourceUrl
-                                  ? `<a href="${product.imageSourceUrl}" target="_blank" rel="noreferrer" class="absolute bottom-0 left-0 right-0 bg-black/55 px-1 py-0.5 text-center text-[8px] text-white">Foto: ${product.imageCredit} / Pexels</a>`
+                                ${product.imageCredit && product.imageSourceUrl && product.imageLicense && product.imageLicenseUrl
+                                  ? `<div class="absolute bottom-0 left-0 right-0 bg-black/55 px-1 py-0.5 text-center text-[8px] text-white"><a href="${safeExternalUrl(product.imageSourceUrl)}" target="_blank" rel="noreferrer">Foto: ${escapeHtml(product.imageCredit)}</a> · <a href="${safeExternalUrl(product.imageLicenseUrl)}" target="_blank" rel="noreferrer">${escapeHtml(product.imageLicense)}</a> · <a href="https://commons.wikimedia.org/" target="_blank" rel="noreferrer">Wikimedia</a></div>`
                                   : ''}
                                 ${!product.isActive && `
                                   <div class="absolute inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center">
@@ -784,6 +804,8 @@ export default function ProductsPage() {
                       name={product.name}
                       imageCredit={product.imageCredit}
                       imageSourceUrl={product.imageSourceUrl}
+                      imageLicense={product.imageLicense}
+                      imageLicenseUrl={product.imageLicenseUrl}
                       compact
                     />
                   </div>

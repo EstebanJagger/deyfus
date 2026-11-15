@@ -40,6 +40,8 @@ export default function ProductForm() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageCredit, setImageCredit] = useState<string | null>(null);
   const [imageSourceUrl, setImageSourceUrl] = useState<string | null>(null);
+  const [imageLicense, setImageLicense] = useState<string | null>(null);
+  const [imageLicenseUrl, setImageLicenseUrl] = useState<string | null>(null);
 
   const [formData, setFormData] = useState<ProductFormData>({
     name: "",
@@ -79,6 +81,8 @@ export default function ProductForm() {
           }
           setImageCredit(p.imageCredit ?? null);
           setImageSourceUrl(p.imageSourceUrl ?? null);
+          setImageLicense(p.imageLicense ?? null);
+          setImageLicenseUrl(p.imageLicenseUrl ?? null);
         }
       } catch (err) {
         console.error(err);
@@ -243,10 +247,13 @@ export default function ProductForm() {
               {imagePreview ? (
                 <div className="text-center">
                   <img src={imagePreview} alt={formData.name || 'Imagen del producto'} className="mx-auto max-h-40 object-contain" />
-                  {imageCredit && imageSourceUrl && (
-                    <a href={imageSourceUrl} target="_blank" rel="noreferrer" className="mt-2 block text-xs text-slate-500 underline">
-                      Foto: {imageCredit} / Pexels
-                    </a>
+                  {imageCredit && imageSourceUrl && imageLicense && imageLicenseUrl && (
+                    <p className="mt-2 text-xs text-slate-500">
+                      <a href={imageSourceUrl} target="_blank" rel="noreferrer" className="underline">Foto: {imageCredit}</a>
+                      {' · '}
+                      <a href={imageLicenseUrl} target="_blank" rel="noreferrer" className="underline">{imageLicense}</a>
+                      {' · Wikimedia Commons'}
+                    </p>
                   )}
                 </div>
               ) : (

@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useApi } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
+import LookerDashboard from '@/components/LookerDashboard';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import {
@@ -147,6 +148,8 @@ export default function DashboardPage() {
           <button onClick={() => window.location.reload()} className="px-3 py-1 bg-white border rounded shadow hover:bg-gray-50">Refrescar</button>
         </div>
       </div>
+
+      <LookerDashboard />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-4">
         <div className="bg-gradient-to-r from-indigo-600 to-indigo-400 text-white rounded-lg p-4 shadow-lg">

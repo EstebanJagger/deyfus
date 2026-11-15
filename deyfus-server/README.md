@@ -70,7 +70,7 @@ Todos los endpoints protegidos requieren el header `Authorization: Bearer <token
 - Las búsquedas automáticas de fotos usan Wikimedia Commons y no requieren una API key.
 - Antes de arrancar, el servidor comprueba y agrega de forma segura las columnas faltantes para los metadatos de imágenes; no requiere pasos manuales en Render.
 - Para reparar una base ya iniciada manualmente, ejecuta `npm run db:prepare-image-metadata` desde `deyfus-server`. El comando solo agrega las cinco columnas de metadatos si faltan y permite reintentar búsquedas de productos sin imagen.
-- En **Productos**, pulsa **Buscar imágenes** para buscar fotos de productos existentes sin imagen. Se procesan hasta 10 por intento; repite si quedan productos. Los productos nuevos buscan una imagen al guardarse.
+- Al abrir **Productos**, las imágenes pendientes se buscan automáticamente en lotes de hasta 10 productos. El botón **Buscar imágenes** permite reintentar manualmente; los productos nuevos también buscan una imagen al guardarse.
 - Las coincidencias de Wikimedia Commons son ilustrativas y pueden no corresponder al modelo exacto. La aplicación muestra el autor, la licencia y los enlaces a la ficha de la foto y a la licencia.
 
 ## Checklist para el frontend

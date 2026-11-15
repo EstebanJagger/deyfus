@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { RecordsModal } from '@/components/RecordsModal';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -40,15 +40,21 @@ export default function ProductsPage() {
   const [branches, setBranches] = useState<Branch[]>([]);
   const [loading, setLoading] = useState(true);
   const [assigningImages, setAssigningImages] = useState(false);
+  const [imageSearchProgress, setImageSearchProgress] = useState<{ processed: number; total: number } | null>(null);
   const [filters, setFilters] = useState({
     search: '',
     branchId: '',
     status: 'all' as 'all' | 'active' | 'inactive',
     mainProducts: false
   });
+  const autoImageSearchStarted = useRef(false);
 
   useEffect(() => {
     loadData();
+    if (!autoImageSearchStarted.current) {
+      autoImageSearchStarted.current = true;
+      void handleAssignImages(true);
+    }
   }, []);
 
   const loadData = async () => {
@@ -165,33 +171,62 @@ export default function ProductsPage() {
     }
   };
 
-  const handleAssignImages = async () => {
+  const handleAssignImages = async (automatic = false) => {
     setAssigningImages(true);
+    setImageSearchProgress({ processed: 0, total: 0 });
     try {
-      const result = await api.post('/products/images/auto', {});
+      let updated = 0;
+      let notFound = 0;
+      let remaining = 0;
+      let processed = 0;
+      let total = 0;
+      let errors: Array<{ message: string }> = [];
+
+      while (true) {
+        const result = await api.post('/products/images/auto', {});
+        const batchUpdated = Number(result.updated ?? 0);
+        const batchNotFound = Number(result.notFound ?? 0);
+        const batchErrors = Array.isArray(result.errors) ? result.errors : [];
+        updated += batchUpdated;
+        notFound += batchNotFound;
+        processed += batchUpdated + batchNotFound;
+        remaining = Number(result.remaining ?? 0);
+        total = Math.max(total, processed + remaining);
+        errors = [...errors, ...batchErrors];
+        setImageSearchProgress({ processed, total });
+
+        if (errors.length || remaining === 0 || (batchUpdated + batchNotFound === 0)) break;
+      }
+
       await loadData();
 
-      const errors = Array.isArray(result.errors) ? result.errors : [];
       const message = [
-        `${result.updated ?? 0} imagen(es) asignada(s).`,
-        result.notFound ? `${result.notFound} producto(s) sin coincidencia.` : '',
-        result.remaining ? `Quedan ${result.remaining} producto(s) por procesar; vuelve a intentarlo.` : '',
+        `${updated} imagen(es) asignada(s).`,
+        notFound ? `${notFound} producto(s) sin coincidencia.` : '',
+        remaining ? `Quedan ${remaining} producto(s) por procesar; vuelve a intentarlo.` : '',
         errors.length ? `Hubo ${errors.length} error(es); el primero: ${errors[0].message}` : ''
       ].filter(Boolean).join(' ');
 
-      await Swal.fire({
-        icon: errors.length ? 'warning' : result.updated ? 'success' : 'info',
-        title: 'Búsqueda de imágenes terminada',
-        text: message
-      });
+      if (!automatic || errors.length) {
+        await Swal.fire({
+          icon: errors.length ? 'warning' : updated ? 'success' : 'info',
+          title: 'Búsqueda de imágenes terminada',
+          text: message || 'No quedan productos pendientes de búsqueda.'
+        });
+      }
     } catch (error) {
       console.error('Error asignando imágenes:', error);
       const message = error && typeof error === 'object' && 'message' in error
         ? String(error.message)
         : 'No se pudieron buscar imágenes.';
-      await Swal.fire('No se pudieron buscar imágenes', message, 'error');
+      if (!automatic) {
+        await Swal.fire('No se pudieron buscar imágenes', message, 'error');
+      } else {
+        console.error('La búsqueda automática de imágenes no se completó:', message);
+      }
     } finally {
       setAssigningImages(false);
+      setImageSearchProgress(null);
     }
   };
 
@@ -210,14 +245,18 @@ export default function ProductsPage() {
           </div>
           <div className="flex w-full flex-wrap gap-2 sm:w-auto">
             <Button
-              onClick={handleAssignImages}
+              onClick={() => handleAssignImages()}
               variant="outline"
               disabled={assigningImages}
             >
               {assigningImages
                 ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 : <Image className="mr-2 h-4 w-4" />}
-              {assigningImages ? 'Buscando...' : 'Buscar imágenes'}
+              {assigningImages
+                ? imageSearchProgress?.total
+                  ? `Buscando ${imageSearchProgress.processed}/${imageSearchProgress.total}...`
+                  : 'Buscando...'
+                : 'Buscar imágenes'}
             </Button>
             <Button
               onClick={() => setShowProductsModal(true)}

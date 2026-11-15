@@ -67,6 +67,11 @@ Todos los endpoints protegidos requieren el header `Authorization: Bearer <token
 - Revisa `.env.example` y modifica `DATABASE_URL` con tu conexión a PostgreSQL.
 - Si el puerto 4000 está ocupado, cambia `PORT` en `.env` o mata el proceso que lo usa.
 - Después de cambiar `prisma/schema.prisma`, ejecuta `npx prisma migrate dev --name <descripcion>` para crear y aplicar migraciones.
+- Las búsquedas automáticas de fotos usan Pexels. Crea una API key en Pexels y guárdala como `PEXELS_API_KEY` en el entorno del servidor; no la pongas en el frontend ni la subas a Git.
+- En Render, agrega `PEXELS_API_KEY` en **Environment** para el servicio del backend y despliega el servidor.
+- Aplica la migración existente en la base de datos de producción con `npx prisma migrate deploy` desde `deyfus-server` antes de usar la búsqueda de imágenes.
+- En **Productos**, pulsa **Buscar imágenes** para buscar fotos de productos existentes sin imagen. Se procesan hasta 20 por intento; repite si quedan productos. Los productos nuevos buscan una imagen al guardarse.
+- Las coincidencias de Pexels son ilustrativas y pueden no corresponder al modelo exacto. Los créditos enlazan a la foto y al fotógrafo en Pexels.
 
 ## Checklist para el frontend
 - Usar `FRONTEND_URL` en `.env` para permitir CORS desde el frontend.

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useApi, API_BASE, resolveImageUrl } from "@/lib/api";
+import { useApi, resolveImageUrl } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
@@ -8,7 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import Swal from "sweetalert2";
 import QRCode from "react-qr-code";
-import { ArrowLeft, Save, X, Loader2, ShoppingBag, Upload } from "lucide-react";
+import { ArrowLeft, Save, X, Loader2, ShoppingBag } from "lucide-react";
 
 interface Category { id: string; name: string }
 interface Branch { id: string; name: string }
@@ -38,7 +38,8 @@ export default function ProductForm() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [branches, setBranches] = useState<Branch[]>([]);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imageCredit, setImageCredit] = useState<string | null>(null);
+  const [imageSourceUrl, setImageSourceUrl] = useState<string | null>(null);
 
   const [formData, setFormData] = useState<ProductFormData>({
     name: "",
@@ -76,6 +77,8 @@ export default function ProductForm() {
           if (p.imageUrl) {
             setImagePreview(resolveImageUrl(p.imageUrl) ?? null);
           }
+          setImageCredit(p.imageCredit ?? null);
+          setImageSourceUrl(p.imageSourceUrl ?? null);
         }
       } catch (err) {
         console.error(err);
@@ -90,20 +93,6 @@ export default function ProductForm() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target as any;
     setFormData(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleImage = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (file.size > 5 * 1024 * 1024) {
-      Swal.fire("Error", "La imagen no debe superar los 5MB", "error");
-      return;
-    }
-    // store file for upload and show preview
-    setImageFile(file);
-    const reader = new FileReader();
-    reader.onload = () => setImagePreview(reader.result as string);
-    reader.readAsDataURL(file);
   };
 
   const validate = () => {
@@ -141,34 +130,28 @@ export default function ProductForm() {
         payload.qrCode = (formData.sku && formData.sku.trim() !== "") ? formData.sku : `prod-${Date.now()}`;
       }
 
-      // If a new image file was selected, upload it first to the backend
-      if (imageFile) {
-        try {
-          const fd = new FormData();
-          fd.append('file', imageFile);
-          const token = localStorage.getItem('token');
-          const res = await fetch(`${API_BASE}/api/uploads`, {
-            method: 'POST',
-            body: fd,
-            headers: token ? { Authorization: `Bearer ${token}` } : undefined
-          });
-          const json = await res.json();
-          if (!res.ok) throw new Error(json?.message || 'Upload failed');
-          payload.imageUrl = json.url;
-        } catch (upErr) {
-          console.error('Upload failed', upErr);
-          Swal.fire('Error', 'No se pudo subir la imagen', 'error');
-          setSaving(false);
-          return;
-        }
-      }
-
   if (isEditing && id) {
-        await put(`/api/products/${id}`, payload);
-        Swal.fire({ icon: "success", title: "Producto actualizado" });
+    const updated = await put(`/api/products/${id}`, payload);
+    if (updated.imageWarning) {
+      await Swal.fire({
+        icon: 'warning',
+        title: 'Producto actualizado sin imagen',
+        text: updated.imageWarning
+      });
+    } else {
+      await Swal.fire({ icon: "success", title: "Producto actualizado" });
+    }
       } else {
-        await post("/api/products", payload);
-        Swal.fire({ icon: "success", title: "Producto creado" });
+        const created = await post("/api/products", payload);
+        if (created.imageWarning) {
+          await Swal.fire({
+            icon: 'warning',
+            title: 'Producto creado sin imagen',
+            text: created.imageWarning
+          });
+        } else {
+          await Swal.fire({ icon: "success", title: "Producto creado" });
+        }
       }
       navigate("/dashboard/products");
     } catch (err) {
@@ -255,31 +238,22 @@ export default function ProductForm() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card className="p-4">
-            <Label>Imagen</Label>
-            <div className="mt-2">
+            <Label>Imagen del producto</Label>
+            <div className="mt-2 flex min-h-48 items-center justify-center rounded-md bg-slate-50 p-4">
               {imagePreview ? (
-                <div className="relative">
-                  <img src={imagePreview} alt="preview" className="max-h-48 object-contain" />
-                  <button
-                    type="button"
-                    aria-label="Quitar imagen"
-                    title="Quitar imagen"
-                    className="absolute right-2 top-2 rounded-full bg-white p-1 shadow"
-                    onClick={() => {
-                      setImagePreview(null);
-                      setImageFile(null);
-                      setFormData(prev => ({ ...prev, imageUrl: '' }));
-                    }}
-                  >
-                    <X />
-                  </button>
+                <div className="text-center">
+                  <img src={imagePreview} alt={formData.name || 'Imagen del producto'} className="mx-auto max-h-40 object-contain" />
+                  {imageCredit && imageSourceUrl && (
+                    <a href={imageSourceUrl} target="_blank" rel="noreferrer" className="mt-2 block text-xs text-slate-500 underline">
+                      Foto: {imageCredit} / Pexels
+                    </a>
+                  )}
                 </div>
               ) : (
-                <label className="cursor-pointer inline-flex flex-col items-center justify-center border-2 border-dashed rounded-md p-6">
-                  <Upload className="w-10 h-10 text-gray-400" />
-                  <span className="mt-2 text-sm text-gray-600">Seleccionar imagen</span>
-                  <input type="file" accept="image/*" className="hidden" onChange={handleImage} />
-                </label>
+                <div className="text-center text-sm text-slate-500">
+                  <ShoppingBag className="mx-auto mb-2 h-10 w-10 text-slate-400" />
+                  <p>La imagen se buscará automáticamente al crear el producto.</p>
+                </div>
               )}
             </div>
           </Card>

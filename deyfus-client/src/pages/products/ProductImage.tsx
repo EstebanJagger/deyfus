@@ -5,6 +5,8 @@ import { resolveImageUrl } from '@/lib/api';
 type ProductImageProps = {
   imageUrl?: string | null;
   name: string;
+  imageCredit?: string | null;
+  imageSourceUrl?: string | null;
   className?: string;
   compact?: boolean;
 };
@@ -12,6 +14,8 @@ type ProductImageProps = {
 export default function ProductImage({
   imageUrl,
   name,
+  imageCredit,
+  imageSourceUrl,
   className = 'h-full w-full',
   compact = false,
 }: ProductImageProps) {
@@ -24,12 +28,28 @@ export default function ProductImage({
 
   if (src && !failed) {
     return (
-      <img
-        src={src}
-        alt={name}
-        className={`h-full w-full object-cover ${className}`}
-        onError={() => setFailed(true)}
-      />
+      <div className="relative h-full w-full overflow-hidden">
+        <img
+          src={src}
+          alt={name}
+          className={`h-full w-full object-cover ${className}`}
+          onError={() => setFailed(true)}
+        />
+        {imageCredit && imageSourceUrl && (
+          <a
+            href={imageSourceUrl}
+            target="_blank"
+            rel="noreferrer"
+            onClick={(event) => event.stopPropagation()}
+            className={`absolute inset-x-0 bottom-0 truncate bg-black/55 px-1.5 py-1 text-center text-white ${
+              compact ? 'text-[8px]' : 'text-[10px]'
+            }`}
+            title={`Foto de ${imageCredit} en Pexels`}
+          >
+            Foto: {imageCredit} / Pexels
+          </a>
+        )}
+      </div>
     );
   }
 

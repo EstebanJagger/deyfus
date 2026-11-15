@@ -1,4 +1,23 @@
 import prisma from '../prisma.js';
+import { findProductImage } from '../utils/pexels.js';
+
+const attachProductImage = async (product) => {
+  const image = await findProductImage(product);
+  if (!image) {
+    await prisma.product.update({
+      where: { id: product.id },
+      data: { imageSearchAttemptedAt: new Date() }
+    });
+    return { product: { ...product, imageSearchAttemptedAt: new Date() }, warning: 'Pexels no encontró una imagen para este producto.' };
+  }
+
+  const updated = await prisma.product.update({
+    where: { id: product.id },
+    data: { ...image, imageSearchAttemptedAt: new Date() },
+    include: { category: true, branch: true }
+  });
+  return { product: { ...product, ...updated } };
+};
 
 export const getProducts = async (req, res) => {
   try {
@@ -72,6 +91,48 @@ export const getProducts = async (req, res) => {
   }
 };
 
+export const autoAssignProductImages = async (req, res) => {
+  try {
+    if (!process.env.PEXELS_API_KEY) {
+      return res.status(503).json({
+        message: 'Configura PEXELS_API_KEY en las variables de entorno del servidor para buscar imágenes.'
+      });
+    }
+
+    const batchSize = 20;
+    const products = await prisma.product.findMany({
+      where: { imageUrl: null, imageSearchAttemptedAt: null },
+      select: { id: true, name: true, brand: true },
+      orderBy: { id: 'asc' },
+      take: batchSize
+    });
+
+    let updated = 0;
+    let notFound = 0;
+    const errors = [];
+
+    for (const product of products) {
+      try {
+        const result = await attachProductImage(product);
+        if (result.product.imageUrl) updated += 1;
+        else notFound += 1;
+      } catch (error) {
+        console.error(`Error buscando imagen para producto ${product.id}:`, error);
+        errors.push({ productId: product.id, message: error.message });
+      }
+    }
+
+    const remaining = await prisma.product.count({
+      where: { imageUrl: null, imageSearchAttemptedAt: null }
+    });
+
+    res.json({ updated, notFound, remaining, errors });
+  } catch (error) {
+    console.error('Error al asignar imágenes de productos:', error);
+    res.status(500).json({ message: 'No se pudieron asignar imágenes automáticamente.' });
+  }
+};
+
 export const getProductById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -139,7 +200,7 @@ export const createProduct = async (req, res) => {
     }
 
     // Crear el producto
-    const product = await prisma.product.create({
+    let product = await prisma.product.create({
       data: {
         name,
         sku,
@@ -157,6 +218,18 @@ export const createProduct = async (req, res) => {
         branch: true
       }
     });
+
+    let imageWarning;
+    if (!product.imageUrl) {
+      try {
+        const result = await attachProductImage(product);
+        product = result.product;
+        imageWarning = result.warning;
+      } catch (error) {
+        console.error(`Error buscando imagen para producto ${product.id}:`, error);
+        imageWarning = error.message;
+      }
+    }
 
     // Si se proporciona stock inicial, crear el registro de inventario
     if (initialStock && branchId) {
@@ -183,7 +256,7 @@ export const createProduct = async (req, res) => {
       });
     }
 
-    res.status(201).json(product);
+    res.status(201).json({ ...product, imageWarning });
   } catch (error) {
     console.error('Error al crear producto:', error);
     res.status(500).json({ message: 'Error al crear producto', error: error.message });
@@ -220,10 +293,15 @@ export const updateProduct = async (req, res) => {
         dataToUpdate[key] = updateData[key];
       }
     }
+    const shouldSearchForImage =
+      !dataToUpdate.imageUrl &&
+      (Object.prototype.hasOwnProperty.call(dataToUpdate, 'name') ||
+        Object.prototype.hasOwnProperty.call(dataToUpdate, 'brand'));
+    if (shouldSearchForImage) dataToUpdate.imageSearchAttemptedAt = null;
 
     console.log('Campos que se aplicarán en update:', dataToUpdate);
 
-    const product = await prisma.product.update({
+    let product = await prisma.product.update({
       where: { id: parseInt(id) },
       data: dataToUpdate,
       include: {
@@ -237,7 +315,19 @@ export const updateProduct = async (req, res) => {
       }
     });
 
-    res.json(product);
+    let imageWarning;
+    if (shouldSearchForImage && !product.imageUrl) {
+      try {
+        const result = await attachProductImage(product);
+        product = result.product;
+        imageWarning = result.warning;
+      } catch (error) {
+        console.error(`Error buscando imagen para producto ${product.id}:`, error);
+        imageWarning = error.message;
+      }
+    }
+
+    res.json({ ...product, imageWarning });
   } catch (error) {
     console.error('Error al actualizar producto:', error);
     // Incluir mensaje de error en la respuesta para facilitar diagnóstico desde el cliente

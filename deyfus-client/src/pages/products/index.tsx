@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Card } from '@/components/ui/card';
-import { ShoppingBag, Plus, Eye, QrCode, Download, Copy, Edit, Power, Trash } from 'lucide-react';
+import { ShoppingBag, Plus, Eye, QrCode, Download, Copy, Edit, Power, Trash, Image, Loader2 } from 'lucide-react';
 import type { Product, Branch } from '@/lib/types';
 import Swal from 'sweetalert2';
 import { formatCurrency } from '@/lib/utils';
@@ -21,6 +21,7 @@ export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [branches, setBranches] = useState<Branch[]>([]);
   const [loading, setLoading] = useState(true);
+  const [assigningImages, setAssigningImages] = useState(false);
   const [filters, setFilters] = useState({
     search: '',
     branchId: '',
@@ -146,6 +147,36 @@ export default function ProductsPage() {
     }
   };
 
+  const handleAssignImages = async () => {
+    setAssigningImages(true);
+    try {
+      const result = await api.post('/products/images/auto', {});
+      await loadData();
+
+      const errors = Array.isArray(result.errors) ? result.errors : [];
+      const message = [
+        `${result.updated ?? 0} imagen(es) asignada(s).`,
+        result.notFound ? `${result.notFound} producto(s) sin coincidencia.` : '',
+        result.remaining ? `Quedan ${result.remaining} producto(s) por procesar; vuelve a intentarlo.` : '',
+        errors.length ? `Hubo ${errors.length} error(es); el primero: ${errors[0].message}` : ''
+      ].filter(Boolean).join(' ');
+
+      await Swal.fire({
+        icon: errors.length ? 'warning' : result.updated ? 'success' : 'info',
+        title: 'Búsqueda de imágenes terminada',
+        text: message
+      });
+    } catch (error) {
+      console.error('Error asignando imágenes:', error);
+      const message = error && typeof error === 'object' && 'message' in error
+        ? String(error.message)
+        : 'No se pudieron buscar imágenes.';
+      await Swal.fire('No se pudieron buscar imágenes', message, 'error');
+    } finally {
+      setAssigningImages(false);
+    }
+  };
+
   return (
     <div className="space-y-5">
       <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
@@ -160,6 +191,16 @@ export default function ProductsPage() {
             <p className="text-gray-500 mt-1">Gestiona tu inventario de calzado</p>
           </div>
           <div className="flex w-full flex-wrap gap-2 sm:w-auto">
+            <Button
+              onClick={handleAssignImages}
+              variant="outline"
+              disabled={assigningImages}
+            >
+              {assigningImages
+                ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                : <Image className="mr-2 h-4 w-4" />}
+              {assigningImages ? 'Buscando...' : 'Buscar imágenes'}
+            </Button>
             <Button
               onClick={() => setShowProductsModal(true)}
               variant="outline"
@@ -248,19 +289,11 @@ export default function ProductsPage() {
                 <ProductImage
                   imageUrl={product.imageUrl}
                   name={product.name}
+                  imageCredit={product.imageCredit}
+                  imageSourceUrl={product.imageSourceUrl}
                   className="transition-transform duration-300 group-hover:scale-105"
                 />
                 <div className="pointer-events-none absolute inset-0 z-10 bg-black opacity-0 transition-opacity group-hover:opacity-10"></div>
-                {!product.imageUrl && (
-                  <button
-                    type="button"
-                    onClick={() => navigate(`/dashboard/products/${product.id}/edit`)}
-                    className="absolute bottom-3 left-1/2 z-30 inline-flex -translate-x-1/2 items-center gap-1.5 whitespace-nowrap rounded-lg bg-white px-3 py-2 text-sm font-medium text-indigo-700 shadow-sm hover:bg-indigo-50"
-                  >
-                    <Plus className="h-4 w-4" />
-                    Agregar imagen
-                  </button>
-                )}
                 <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-20">
                   <button
                     onClick={() => {
@@ -282,6 +315,9 @@ export default function ProductsPage() {
                                     </svg>
                                    </div>`
                               }
+                              ${product.imageCredit && product.imageSourceUrl
+                                ? `<a href="${product.imageSourceUrl}" target="_blank" rel="noreferrer" class="absolute bottom-0 left-0 right-0 bg-black/55 px-2 py-1 text-center text-xs text-white">Foto: ${product.imageCredit} / Pexels</a>`
+                                : ''}
                               ${product.isActive 
                                 ? `<div class="absolute top-2 right-2">
                                      <span class="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">Activo</span>
@@ -434,6 +470,9 @@ export default function ProductsPage() {
                                       </svg>
                                      </div>`
                                 }
+                                ${product.imageCredit && product.imageSourceUrl
+                                  ? `<a href="${product.imageSourceUrl}" target="_blank" rel="noreferrer" class="absolute bottom-0 left-0 right-0 bg-black/55 px-1 py-0.5 text-center text-[8px] text-white">Foto: ${product.imageCredit} / Pexels</a>`
+                                  : ''}
                                 ${!product.isActive && `
                                   <div class="absolute inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center">
                                     <span class="px-2 py-0.5 text-xs text-white font-medium">Inactivo</span>
@@ -743,6 +782,8 @@ export default function ProductsPage() {
                     <ProductImage
                       imageUrl={product.imageUrl}
                       name={product.name}
+                      imageCredit={product.imageCredit}
+                      imageSourceUrl={product.imageSourceUrl}
                       compact
                     />
                   </div>

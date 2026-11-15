@@ -40,6 +40,8 @@ export interface Product {
   cost: number;
   brand?: string;
   imageUrl?: string;
+  imageCredit?: string;
+  imageSourceUrl?: string;
   qrCode: string;
   categoryId?: number;
   category?: Category;

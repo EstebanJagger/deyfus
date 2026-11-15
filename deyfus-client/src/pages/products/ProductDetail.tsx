@@ -44,6 +44,8 @@ interface Product {
   description?: string;
   brand?: string;
   imageUrl?: string;
+  imageCredit?: string;
+  imageSourceUrl?: string;
   qrCode: string;
   isActive: boolean;
   category?: {
@@ -240,6 +242,8 @@ const ProductDetail = () => {
             <ProductImage
               imageUrl={product.imageUrl}
               name={product.name}
+              imageCredit={product.imageCredit}
+              imageSourceUrl={product.imageSourceUrl}
               className="h-12 w-12 shrink-0 rounded-lg border-2 border-gray-200"
               compact
             />

@@ -93,6 +93,10 @@ Después de importar datos, puedes usar las credenciales que registraste:
 
 O crea un nuevo usuario usando el formulario de registro.
 
+## Modo de demostración visual
+
+En el panel, presiona `Ctrl+X` y luego `C` (dentro de 1.5 segundos) y escribe `hesoyam` para abrir una vista de usuarios ficticios. Esta vista es solo para demostración: no cambia roles ni consulta o modifica datos de usuarios en el servidor.
+
 ## Estructura del Proyecto
 
 ```
@@ -248,5 +252,4 @@ Para issues o preguntas, abre un [issue en GitHub](https://github.com/Elizabeth2
 MIT — libre para usar, modificar y distribuir.
 
 ---
-
 

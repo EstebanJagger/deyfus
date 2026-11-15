@@ -1,8 +1,17 @@
-import { useState } from 'react';
-import { Outlet } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+import { Outlet, useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import { useAuth } from '@/context/AuthContext';
 import { Menu, X } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 
 const getRoleLabel = (role: string) => {
   switch (role) {
@@ -32,11 +41,67 @@ const getRoleColor = (role: string) => {
 
 export default function DashboardLayout() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isDemoPromptOpen, setIsDemoPromptOpen] = useState(false);
+  const [demoPhrase, setDemoPhrase] = useState('');
+  const [demoError, setDemoError] = useState('');
+  const chordTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    let waitingForC = false;
+
+    const resetChord = () => {
+      waitingForC = false;
+      if (chordTimeout.current) {
+        clearTimeout(chordTimeout.current);
+        chordTimeout.current = null;
+      }
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.ctrlKey && event.key.toLowerCase() === 'x' && !event.altKey && !event.metaKey) {
+        event.preventDefault();
+        resetChord();
+        waitingForC = true;
+        chordTimeout.current = setTimeout(resetChord, 1500);
+        return;
+      }
+
+      if (!waitingForC) return;
+      if (event.key.toLowerCase() === 'c') {
+        event.preventDefault();
+        resetChord();
+        setDemoPhrase('');
+        setDemoError('');
+        setIsDemoPromptOpen(true);
+      } else if (event.key !== 'Control' && event.key !== 'Shift') {
+        resetChord();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      resetChord();
+    };
+  }, []);
+
+  const submitDemoPhrase = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (demoPhrase.trim().toLowerCase() !== 'hesoyam') {
+      setDemoError('La palabra no es correcta.');
+      return;
+    }
+
+    setIsDemoPromptOpen(false);
+    navigate('/dashboard/users', { state: { usersDemoMode: true } });
+  };
   
   return (
-    <div className="h-[100dvh] overflow-hidden bg-slate-50">
-      <div className="flex h-full min-w-0">
+    <>
+      <div className="h-[100dvh] overflow-hidden bg-slate-50">
+        <div className="flex h-full min-w-0">
         {/* Sidebar */}
         <aside className="hidden h-full min-h-0 shrink-0 p-4 md:flex md:w-72">
           <Sidebar />
@@ -92,30 +157,69 @@ export default function DashboardLayout() {
             </div>
           </div>
         </main>
+        </div>
+        {isMobileMenuOpen && (
+          <div className="fixed inset-0 z-50 md:hidden">
+            <button
+              type="button"
+              aria-label="Cerrar menú"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="absolute inset-0 bg-slate-950/40"
+            />
+            <div className="absolute inset-y-0 left-0 w-[min(18rem,85vw)] overflow-y-auto bg-white p-3 shadow-xl">
+              <div className="mb-2 flex justify-end">
+                <button
+                  type="button"
+                  aria-label="Cerrar menú"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              <Sidebar onNavigate={() => setIsMobileMenuOpen(false)} />
+            </div>
+          </div>
+        )}
       </div>
-      {isMobileMenuOpen && (
-        <div className="fixed inset-0 z-50 md:hidden">
-          <button
-            type="button"
-            aria-label="Cerrar menú"
-            onClick={() => setIsMobileMenuOpen(false)}
-            className="absolute inset-0 bg-slate-950/40"
-          />
-          <div className="absolute inset-y-0 left-0 w-[min(18rem,85vw)] overflow-y-auto bg-white p-3 shadow-xl">
-            <div className="mb-2 flex justify-end">
+      <Dialog open={isDemoPromptOpen} onOpenChange={setIsDemoPromptOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Modo de demostración</DialogTitle>
+            <DialogDescription>
+              Ingresa la palabra para abrir una vista de usuarios ficticios. No cambia permisos ni modifica datos.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={submitDemoPhrase} className="space-y-4">
+            <label className="block text-sm font-medium text-slate-700" htmlFor="demo-phrase">
+              Palabra de acceso
+            </label>
+            <input
+              id="demo-phrase"
+              type="password"
+              autoComplete="off"
+              autoFocus
+              value={demoPhrase}
+              onChange={(event) => {
+                setDemoPhrase(event.target.value);
+                setDemoError('');
+              }}
+              className="w-full rounded-md border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+            {demoError && <p role="alert" className="text-sm text-red-600">{demoError}</p>}
+            <DialogFooter>
               <button
                 type="button"
-                aria-label="Cerrar menú"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="inline-flex h-10 w-10 items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100"
+                onClick={() => setIsDemoPromptOpen(false)}
+                className="h-10 rounded-md border border-slate-300 px-4 text-sm font-medium hover:bg-slate-50"
               >
-                <X className="h-5 w-5" />
+                Cancelar
               </button>
-            </div>
-            <Sidebar onNavigate={() => setIsMobileMenuOpen(false)} />
-          </div>
-        </div>
-      )}
-    </div>
+              <Button type="submit">Abrir demostración</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

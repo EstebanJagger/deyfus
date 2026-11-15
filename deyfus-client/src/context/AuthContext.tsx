@@ -50,6 +50,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setIsLoading(false);
   }, []);
 
+  useEffect(() => {
+    const syncRefreshedToken = () => {
+      setToken(localStorage.getItem('token'));
+    };
+
+    window.addEventListener('auth-token-refreshed', syncRefreshedToken);
+    return () => window.removeEventListener('auth-token-refreshed', syncRefreshedToken);
+  }, []);
+
   const login = (u: User, t: string) => {
     if (!t || t.trim() === '') {
       console.error('Invalid token provided to login');

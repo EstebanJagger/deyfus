@@ -64,6 +64,11 @@ export async function apiFetch(path: string, options: {
   }
 
   const res = await fetch(url, fetchOptions);
+  const refreshedToken = res.headers.get('X-Auth-Token');
+  if (refreshedToken) {
+    localStorage.setItem('token', refreshedToken);
+    window.dispatchEvent(new Event('auth-token-refreshed'));
+  }
   
   // Handle 401 - Force logout
   if (res.status === 401) {
